@@ -23,6 +23,8 @@ import seaborn as sns
 import ternary
 from scipy.stats import multinomial
 
+from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
+
 #Define functions
 
 def about():
@@ -63,7 +65,7 @@ def data_retrieval(sourcefile, metadata, pt_id):
     df = df.drop(columns = ['one', 'two'])
 
     #Import information about plate cell type and patient
-    key = pd.read_excel(metadata, sheet_name = 'PlateID') #should this be an input? also in next fucntion
+    key = pd.read_excel(metadata, sheet_name = 'PlateID')
     key = key.drop(['Cell Origin', 'Plate Nr', 'Plate Name','Nr of cells'], axis=1)
     key.rename(columns = {'Comments2':'Plate'}, inplace = True)
     key.rename(columns = {'Cell-group':'Celltype'}, inplace = True)
@@ -80,7 +82,7 @@ def data_retrieval(sourcefile, metadata, pt_id):
 
     return pt_allele_plate
 
-def call_haps(data, pt_id, haps, reads,  cutoff):
+def call_haps(data, metadata, pt_id, haps, reads,  cutoff):
     
     cond = f'{pt_id}_{haps}'
     print(cond)
@@ -107,10 +109,11 @@ def call_haps(data, pt_id, haps, reads,  cutoff):
         print('For JP001 enter 2/3/4 haplotypes, for PD7153 enter 3/4 haplotypes, for PD7151 enter 2 haplotypes')
     
     #Import information about plate cell type and patient
-    key = pd.read_excel('../Data/Amp_data/Amplicon_metadata_fixed.xlsx', sheet_name = 'PlateID')
-    key = key.drop(['Cell Origin', 'Plate Nr', 'Plate Name','Nr of cells', 'fcs-fle' ], axis=1)
+    key = pd.read_excel(metadata, sheet_name = 'PlateID')
+    key = key.drop(['Cell Origin', 'Plate Nr', 'Plate Name','Nr of cells'], axis=1)
     key.rename(columns = {'Comments2':'Plate'}, inplace = True)
     key.rename(columns = {'Cell-group':'Celltype'}, inplace = True)
+
     
     #Make a dictionary to associate plates with patients and plate with cell type
     plate_pt_dict = dict(zip(key.Plate, key.Patient))
@@ -191,9 +194,9 @@ def call_haps(data, pt_id, haps, reads,  cutoff):
         elif cond == 'JP001_2':
             a = row['JP001_RUNX1_c'] + row['JP001_RUNX1_g']   
         elif cond == 'PD7153_3':
-            a = row['PD7153_TET2b'] + row['PD7153_TET2a'] + row['PD7153_SRSF2']
+            a = row['PD7153_TET2b'] + row['PD7153_SRSF2'] + row['PD7153_TET2a']
         elif cond == 'PD7153_4':
-            a = row['PD7153_TET2b'] + row['PD7153_TET2a'] + row['PD7153_SRSF2'] + row['PD7153_TGFB3_g']
+            a = row['PD7153_TET2b'] + row['PD7153_SRSF2'] + row['PD7153_TET2a'] + row['PD7153_TGFB3_g']
         elif cond == 'PD7151_2':
             a = row['PD7151_TET2b'] + row['PD7151_TET2a']
         
@@ -210,7 +213,7 @@ def call_haps(data, pt_id, haps, reads,  cutoff):
     return df2
 
 
-def plot_hap_dist_sort_type(data, pt_id, haps, reads, cutoff, save = False): #plot based on cell type (ned to merge output from above)
+def plot_hap_dist_sort_type(data, pt_id, haps, reads, cutoff, save = False): #plot based on cell type (need to merge output from above)
       
     #rename the input data and work out how many haplotypes it has
     df3 = data.copy()
@@ -243,17 +246,17 @@ def plot_hap_dist_sort_type(data, pt_id, haps, reads, cutoff, save = False): #pl
         hap_poss = ['BA', 'Ba', 'bA', 'ba']
 
     elif cond == 'PD7153_3':
-        hap_poss = ['BAS', 'BAs', 'BaS', 'Bas', 'bAS', 'bAs', 'baS', 'bas']
+        hap_poss = ['BSA', 'BSa', 'BsA', 'Bsa', 'bSA', 'bSa', 'bsA', 'bsa']
 
     elif cond == 'PD7153_4':
-        hap_poss = ['BAST', 'BASt', 'BAsT', 'BAst', 'BaST', 'BaSt', 'BasT', 'Bast', 'bAST', 'bASt', 'bAsT', 'bAst', 'baST', 'baSt', 'basT', 'bast']
+        hap_poss = ['BSAT', 'BSAt', 'BSaT', 'BSat', 'BsAT', 'BsAt', 'BsaT', 'Bsat', 'bSAT', 'bSAt', 'bSaT', 'bSat', 'bsAT', 'bsAt', 'bsaT', 'bsat']
 
     num_col = len(hap_poss)
     cols = sns.color_palette("husl", num_col)     
     color = dict(zip(hap_poss, cols))
     hap_order = {}
     for i, j in enumerate(hap_poss):
-        hap_order[1] = j
+        hap_order[i] = j
         
     #if any haplotype is not present, add it into the frame with freq 0 
 
@@ -303,14 +306,16 @@ def plot_hap_dist_sort_type(data, pt_id, haps, reads, cutoff, save = False): #pl
 
         else:
             continue
-            
+    
+    plt.rcParams['svg.fonttype'] = 'none'          
     if save == True:
-        fig.savefig(f'../Results/Haplotypes/{pt_id}_{haps}_{reads}_{cutoff}_haplotype_by_sortcell.png',dpi=300)
+        fig.savefig(f'../Results/{pt_id}_{haps}_{reads}_{cutoff}_haplotype_by_sortcell.svg',dpi=600)
 
-def plot_index_heatmap(data, title, haps, reads, cutoff, save = False):
+def plot_index_heatmap(data, pt_id, haps, reads, cutoff, save = False):
     df = data.copy()
     a = df.groupby(['Haplotype', 'celltype']).size().unstack(fill_value = 0)
-    alltypes = ['HSC','MPP','HEALTHY_SC','CMP',  'GMP','GMP2', 'MEP', 'MDS_SC',  'NE', 'Mono','nBC', 'unassigned']
+    a = a.drop(columns = ['unassigned']) #drop unassigned cells, no need to plot these
+    alltypes = ['HSC','MPP','SC','CMP',  'GMP','GMP2', 'MEP', 'MDS_SC',  'Neut', 'Mono','nBC']    
     col_order = {}            
     for i, typ in enumerate(alltypes):
          col_order[typ] = i
@@ -324,15 +329,19 @@ def plot_index_heatmap(data, title, haps, reads, cutoff, save = False):
     b = a.copy()
     a = a * 100 /a.sum(axis = 0)
 
-    fig, ax = plt.subplots(figsize = (16, 6))
-    sns.heatmap(data = a, ax = ax, robust = True)
+    fig, (ax2,ax) = plt.subplots(2, 1, figsize = (6,4), gridspec_kw = dict(height_ratios = [0.8,5.2]))
+    sns.heatmap(data = a, ax = ax, robust = True, cbar = False)
     ax.tick_params(axis='y', labelrotation = 0)
     ax.set_xlabel('')
-    ax.set_ylabel('')
-    ax.set_title(title)  
+    ax.set_ylabel('') 
     
+    ax_divider = make_axes_locatable(ax)
+    cax = ax_divider.append_axes('bottom', size = '5%', pad = '20%')
+    plt.colorbar(ax.get_children()[0], cax = cax, orientation = 'horizontal')
+    cax.xaxis.set_ticks_position('bottom')
+
     x = df.groupby(['Haplotype', 'celltype']).size().unstack(fill_value = 0)
-    y = df.groupby(['Haplotype', 'celltype']).size().unstack(fill_value = 0)
+    x = x.drop(columns = ['unassigned'])
     x = x.sum(axis = 0)
     x = x.to_frame()
     x['order'] = x.index.get_level_values(0)
@@ -343,21 +352,26 @@ def plot_index_heatmap(data, title, haps, reads, cutoff, save = False):
     x.columns = ['number', 'ct']
 
     
-    fig2, ax2 = plt.subplots(figsize = (12.8, 1))
-    sns.scatterplot(x = 'ct', y = 'number', data = x, ax = ax2, s = 100, color = 'green')
-    ax2.tick_params(axis='x', labelrotation = 90)
+    sns.scatterplot(x = 'ct', y = 'number', data = x, ax = ax2, marker = 's', s = 120, zorder = 10, color = 'black')
+    ax2.tick_params(axis='x', labelrotation = 0)
     ax2.set_xlabel('')
     ax2.set_ylabel('')
-    ax2.axhline(10, ls = '--', c = 'gray')
-    ax2.axhline(100, ls = '--', c = 'gray')
+    ax2.axhline(10, ls = '--', lw = 1, c = 'gray')
+    ax2.axhline(100, ls = '--', lw = 1, c = 'gray')
+    ax2.axhline(1000, ls = '--', lw = 1, c = 'gray')
+    ax2.spines['top'].set_visible(False)
+    #ax2.spines['right'].set_visible(False)
     ax2.set_ylim(1,1001)
     ax2.set_yticks([1,10, 100, 1000])
-    ax2.set_yticklabels(['1','10', '100','1000]'])    
-    ax2.set_yscale('log') #use this only with scatterplot
-    ax2.set_title('Total number of cells for each type')  
+    ax2.set_yticklabels(['1','10', '100','1000'])  
+    ax2.set_xticklabels(['','','','','','','',''])
+    ax2.set_yscale('log') 
     
+    fig.tight_layout(h_pad = 1) 
+    
+    plt.rcParams['svg.fonttype'] = 'none'  
     if save == True:
-        fig.savefig(f'../Results/Haplotypes/{pt_id}_{haps}_{reads}_{cutoff}_haplotype_by_indexcell.png',dpi=300)
+        fig.savefig(f'../Results/{pt_id}_{haps}_{reads}_{cutoff}_haplotype_by_indexcell.svg',dpi=600)
     
     return b
 
@@ -601,6 +615,89 @@ def calc_scVAF_binary_per_cell(data, pt_init, reads, cutoff):
     
     
     return data
+
+def tern_plot(y, r_corner,t_corner, l_corner, pt_id, reads, cutoff):
+    
+    '''
+    The variables r-corner, t_corner, l_corner define the point at which each haplotype is plotted.
+    '''
+    
+    colors = sns.color_palette('husl', n_colors = y.shape[1])
+
+    fig, tax = ternary.figure(scale = 100)
+    fig.set_size_inches(6,5)
+
+    for i, celltype in enumerate(y.columns):
+        tax.scatter([y[celltype]], marker='o', s = 100, zorder = 10, label=celltype, color = colors[i], edgecolor = 'black')
+
+    tax.legend(loc = 'upper left', bbox_to_anchor = [0,0],  bbox_transform = plt.gca().transAxes, ncol = 4 )
+
+    # Draw Boundary and Gridlines
+    tax.boundary(linewidth=2.0)
+    tax.gridlines(color="black", multiple=20)
+    tax.gridlines(color="blue", multiple=10, linewidth=0.5)
+
+    # Set Axis labels and Title
+    fontsize = 10
+
+    tax.right_corner_label(r_corner, fontsize=fontsize)
+    tax.top_corner_label(t_corner, fontsize=fontsize)
+    tax.left_corner_label(l_corner, fontsize=fontsize)
+    tax.ticks(axis='lbr', multiple=20, linewidth=1, offset=0.025)
+    tax.get_axes().axis('off')
+    tax.clear_matplotlib_ticks()
+    tax.show()
+
+    plt.rcParams['svg.fonttype'] = 'none'  
+    fig.savefig(f'../Results/{pt_id}_Ternary_{reads}_{cutoff}.svg',bbox_inches='tight',dpi=600)
+    
+    return
+
+
+def tern_plot_cloud(y, j, r_corner,t_corner, l_corner, pt_id, reads, cutoff):
+    
+    '''
+    Variables y and j are created in the lines above
+    The variables r-corner, t_corner, l_corner define the point at which each haplotype is plotted.
+    '''
+    colors = sns.color_palette('husl', n_colors = y.shape[1])
+    ndict = j.sum(axis = 0)
+    fig, tax = ternary.figure(scale = 100)
+    fig.set_size_inches(6,5)
+
+
+    for i, celltype in enumerate(y.columns):
+        tax.scatter([y[celltype]], marker='o', s = 100, zorder = 10, label=celltype, color = colors[i], edgecolor = 'black') #plot the average of all
+
+        n=ndict.loc[celltype] #number of cells in this cell type
+        p = y[celltype]/100 #return proportion to probability of being each haplotype
+        dist = multinomial(n, p=p)
+        points = dist.rvs(1000)/n*100
+        tax.scatter(points, marker='o', s = 100, zorder = 5, alpha = 0.01, color = colors[i]) #plot the calculated variation
+
+    tax.legend(loc = 'upper left', bbox_to_anchor = [0,0],  bbox_transform = plt.gca().transAxes, ncol = 4 )
+    # Draw Boundary and Gridlines
+    tax.boundary(linewidth=2.0)
+    tax.gridlines(color="black", multiple=20)
+    tax.gridlines(color="blue", multiple=10, linewidth=0.5)
+
+    # Set Axis labels and Title
+    fontsize = 10
+
+    tax.right_corner_label(r_corner, fontsize=fontsize)
+    tax.top_corner_label(t_corner, fontsize=fontsize)
+    tax.left_corner_label(l_corner, fontsize=fontsize)
+    tax.ticks(axis='lbr', multiple=20, linewidth=1, offset=0.025)
+    tax.get_axes().axis('off')
+    tax.clear_matplotlib_ticks()
+    tax.show()
+
+    plt.rcParams['svg.fonttype'] = 'none'  
+    fig.savefig(f'../Results/{pt_id}_Ternary_cloud_{reads}_{cutoff}.svg',bbox_inches='tight',dpi=600)
+    
+    return
+
+
 
 
 

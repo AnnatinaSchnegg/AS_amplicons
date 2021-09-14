@@ -135,7 +135,7 @@ def plate_qc(directory, data_name, save = False):
 	To call - plate_qc(directory, data_name)
 	data_name is a string that will be used to label graphs and output files
 	Sort locations are plotted using the default software assignment x(0-23), y(0-15) for Aria, with alphanumeric values applied to the graph only.
-	When save = True, save location is ../Results/Indexing/
+	When save = True, save location is ../Results/
 	
 	'''
 	
@@ -179,8 +179,9 @@ def plate_qc(directory, data_name, save = False):
 
 	fig.suptitle(f'{data_name}', fontsize=14)
 
+	plt.rcParams['svg.fonttype'] = 'none'  
 	if save == True:   
-		fig.savefig(f'../Results/Indexing/{data_name}_plot_sorted_by_plate.png',dpi=300)     
+		fig.savefig(f'../Results/{data_name}_plot_sorted_by_plate.svg',dpi=600)     
 	
 	return
 
@@ -388,7 +389,7 @@ def flowplot_byplate(compdata, plot_list, logs, gates,  data_name, plot = True, 
 	logs is a list of channels which should be plotted on a log10 scale (eg/ all antibody channels)
 	gates = a dictionary of gate locations for all relevant channels, these will be added to plots  eg/ gates = {'Lin-PE-Cy5': 1500}
 	data_name is a string which will be used to customise the name of the output file {data_name}_flowplot_by_plate.png
-	When save = True, the plot will be saved in ../Results/Indexing/
+	When save = True, the plot will be saved in ../Results/
 
 	'''
 	
@@ -432,8 +433,9 @@ def flowplot_byplate(compdata, plot_list, logs, gates,  data_name, plot = True, 
 
 	fig.suptitle(f'{data_name}', fontsize=16) 
 
+	plt.rcParams['svg.fonttype'] = 'none'  
 	if save == True:
-		fig.savefig(f'../Results/Indexing/{data_name}_flowplot_by_plate.png',dpi=300) 
+		fig.savefig(f'../Results/{data_name}_flowplot_by_plate.svg',dpi=600) 
 
 	if plot == False:
 		plt.close()
@@ -449,7 +451,7 @@ def flowplot_bycelltype(assigndata, plot_list, logs, gates,  data_name, plot = T
 	logs is a list of channels which should be plotted on a log10 scale (eg/ all antibody channels)
 	gates = a dictionary of gate locations for all relevant channels, these will be added to plots  eg/ gates = {'Lin-PE-Cy5': 1500}
 	data_name is a string which will be used to customise the name of the output file {data_name}_flowplot_by_celltype.png
-	When save = True, the plot will be saved in ../Results/Indexing/ 
+	When save = True, the plot will be saved in ../Results/
     '''
 
 	
@@ -495,8 +497,9 @@ def flowplot_bycelltype(assigndata, plot_list, logs, gates,  data_name, plot = T
 
 	fig.suptitle(f'{data_name}', fontsize=16)   
 
+	plt.rcParams['svg.fonttype'] = 'none'  
 	if save == True:
-		fig.savefig(f'../Results/Indexing/{data_name}_flowplot_by_celltype.png',dpi=300) 
+		fig.savefig(f'../Results/{data_name}_flowplot_by_celltype.svg',dpi=600) 
 
 	if plot == False:
 		plt.close()        
@@ -511,7 +514,7 @@ def MDS_BM_celltype_assign(source, gates, data_name, save = False):
 	source is a dataframe containing indexed flow data eg/ the output from get_comp_data() or get_comp_data_autolabel()
 	gates = a dictionary of gate locations for all relevant channels, these will be added to plots  eg/ gates = {'Lin-PE-Cy5': 1500}
 	data_name is a string which will be used to customise the name of the output file {data_name}_MDS_BMcelltype_assigned.png
-	The cell assignment plot will be automatically be saved in ../Results/Indexing/
+	The cell assignment plot will be automatically be saved in ../Results/
 	When save = True, the input dataframe with a new column 'celltype' containing the assigned will be saved. The function always returns this dataframe.
 	The function assumes sort gates used for sorting actually dumped dead and lin pos cells
 
@@ -538,14 +541,14 @@ def MDS_BM_celltype_assign(source, gates, data_name, save = False):
 	mds_sc1 = ['CD34_pos','CD38_neg','IL1RAP_pos'] #MDS sc are postivie for any of IL1RAP, CD45RA, CD123
 	mds_sc2 = ['CD34_pos','CD38_neg','CD45RA_pos']
 	mds_sc3 = ['CD34_pos','CD38_neg','CD123_pos']
-	healthy_sc = ['CD34_pos','CD38_neg','IL1RAP_neg','CD45RA_neg','CD123_neg']
+	sc = ['CD34_pos','CD38_neg','IL1RAP_neg','CD45RA_neg','CD123_neg']
 	CMP = ['CD34_pos','CD38_pos','CD45RA_neg','CD123_pos']
 	gmp = ['CD34_pos','CD38_pos','CD45RA_pos']
 	mep = ['CD34_pos','CD38_pos','CD45RA_neg','CD123_neg']
 
-	col_names = ['mds_sc1', 'mds_sc2','mds_sc2','healthy_sc', 'cmp', 'gmp','mep']
-	celltypes = ['MDS_SC', 'MDS_SC','MDS_SC','HEALTHY_SC',  'CMP', 'GMP', 'MEP'] #will rename all mds_sc to a single label
-	alltypes = [mds_sc1, mds_sc2, mds_sc3, healthy_sc, CMP, gmp, mep]
+	col_names = ['mds_sc1', 'mds_sc2','mds_sc2','sc', 'cmp', 'gmp','mep']
+	celltypes = ['MDS_SC', 'MDS_SC','MDS_SC','SC',  'CMP', 'GMP', 'MEP'] #will rename all mds_sc to a single label
+	alltypes = [mds_sc1, mds_sc2, mds_sc3, sc, CMP, gmp, mep]
 
 	#Store list of which columns are true for each cell type in a dictionary
 
@@ -587,7 +590,8 @@ def MDS_BM_celltype_assign(source, gates, data_name, save = False):
 	ax = sns.barplot(x='cell', y='counts', data = c, palette = palette)
 
 	fig.suptitle(f'{data_name}', fontsize=16)
-	fig.savefig(f'../Results/Indexing/{data_name}_MDS_BMcelltype_assigned.png',dpi=300) 
+	plt.rcParams['svg.fonttype'] = 'none'  
+	fig.savefig(f'../Results/{data_name}_MDS_BMcelltype_assigned.svg',dpi=600) 
 	
 	return data_in
 
@@ -599,7 +603,7 @@ def BM_celltype_assign(source, gates, data_name, save = False):
 	source is a dataframe containing indexed flow data eg/ the output from get_comp_data() or get_comp_data_autolabel()
 	gates = a dictionary of gate locations for all relevant channels, these will be added to plots  eg/ gates = {'Lin-PE-Cy5': 1500}
 	data_name is a string which will be used to customise the name of the output file {data_name}_BMcelltype_assigned.png
-	The cell assignment plot will be automatically be saved in ../Results/Indexing/
+	The cell assignment plot will be automatically be saved in ../Results/
 	When save = True, the input dataframe with a new column 'celltype' containing the assigned will be saved. The function always returns this dataframe.
 	The function assumes sort gates used for sorting actually dumped dead and lin pos cells
 
@@ -671,8 +675,9 @@ def BM_celltype_assign(source, gates, data_name, save = False):
 	c = data_in['celltype'].value_counts().rename_axis('cell').reset_index(name='counts')
 	ax = sns.barplot(x='cell', y='counts', data = c, palette = palette)
 
+	plt.rcParams['svg.fonttype'] = 'none'  
 	fig.suptitle(f'{data_name}', fontsize=16)
-	fig.savefig(f'../Results/Indexing/{data_name}_BMcelltype_assigned.png',dpi=300) 
+	fig.savefig(f'../Results/{data_name}_BMcelltype_assigned.svg',dpi=600) 
 	
 	return data_in
 
@@ -685,7 +690,7 @@ def PB_celltype_assign(source, gates, data_name, save = False):
 	source is a dataframe containing indexed flow data eg/ the output from get_comp_data() or get_comp_data_autolabel()
 	gates = a dictionary of gate locations for all relevant channels, these will be added to plots  eg/ gates = {'Lin-PE-Cy5': 1500}
 	data_name is a string which will be used to customise the name of the output file {data_name}_PBcelltype_assigned.png
-	The cell assignment plot will be automatically be saved in ../Results/Indexing/
+	The cell assignment plot will be automatically be saved in ../Results/
 	When save = True, the input dataframe with a new column 'celltype' containing the assigned will be saved. The function always returns this dataframe.
 	The function assumes sort gates used for sorting actually dumped dead cells
 
@@ -711,12 +716,12 @@ def PB_celltype_assign(source, gates, data_name, save = False):
 	#Define each cell type - doing this explicitly to make code easier to follow. Tweaked to include IL1RAP neg for normal 38- cells
 
 	nBC = ['CD45_pos','IgD_pos','CD27_neg']
-	NE = ['CD45_pos','IgD_neg','CD66b_pos','CD16_pos']
+	Neut = ['CD45_pos','IgD_neg','CD66b_pos','CD16_pos']
 	Mono = ['CD45_pos','IgD_neg','CD66b_neg']
 
-	col_names = ['nBC', 'NE', 'Mono']
-	celltypes = ['nBC', 'NE', 'Mono']
-	alltypes = [nBC, NE, Mono]
+	col_names = ['nBC', 'Neut', 'Mono']
+	celltypes = ['nBC', 'Neut', 'Mono']
+	alltypes = [nBC, Neut, Mono]
 
 	#Store list of which columns are true for each cell type in a dictionary
 
@@ -757,8 +762,9 @@ def PB_celltype_assign(source, gates, data_name, save = False):
 	c = data_in['celltype'].value_counts().rename_axis('cell').reset_index(name='counts')
 	ax = sns.barplot(x='cell', y='counts', data = c, palette = palette)
 
+	plt.rcParams['svg.fonttype'] = 'none'  
 	fig.suptitle(f'{data_name}', fontsize=16)
-	fig.savefig(f'../Results/Indexing/{data_name}_PBcelltype_assigned.png',dpi=300) 
+	fig.savefig(f'../Results/{data_name}_PBcelltype_assigned.svg',dpi=600) 
 	
 	return data_in
 
